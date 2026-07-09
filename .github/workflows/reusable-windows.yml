@@ -15,7 +15,6 @@ on:
       interpreter:
         description: Which interpreter to build (switch-case or tail-call)
         required: true
-        default: tail-call
         type: string
 
 permissions:
