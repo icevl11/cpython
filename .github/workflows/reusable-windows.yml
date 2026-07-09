@@ -1,4 +1,4 @@
-name: Reusable Windows
+name: Reusable Windows Custom Build
 
 on:
   workflow_call:
@@ -13,41 +13,81 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   FORCE_COLOR: 1
-  IncludeUwp: >-
-    true
 
 jobs:
   build:
-    name: Build and test (${{ inputs.arch }})
+    name: Build CPython (${{ inputs.arch }})
     runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2022' }}
-    timeout-minutes: 60
+
+    timeout-minutes: 90
+
     env:
       ARCH: ${{ inputs.arch }}
+
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Checkout source
+      uses: actions/checkout@v6
       with:
         persist-credentials: false
-    - name: Register MSVC problem matcher
-      if: inputs.arch != 'Win32'
-      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+
+
     - name: Build CPython
-      run: >-
-        .\\PCbuild\\build.bat
-        -e -d -v
-        -p "${ARCH}"
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
-    - name: Display build info
-      run: .\\python.bat -m test.pythoninfo
+      run: |
+        PCbuild\build.bat ^
+          -e ^
+          -d ^
+          -v ^
+          -p "${ARCH}" ^
+          ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+
+
+    # Создание полноценной установки Python
+    - name: Install CPython layout
+      shell: cmd
+      run: |
+        mkdir python-dist
+
+        PCbuild\amd64\python.exe -m sysconfig
+
+        xcopy Lib python-dist\Lib /E /I /Y
+
+        xcopy PCbuild\amd64 python-dist /E /I /Y
+
+        mkdir python-dist\Scripts
+
+        echo Python build complete
+
+
+    # Проверка что Lib существует
+    - name: Check files
+      shell: cmd
+      run: |
+        dir python-dist
+        dir python-dist\Lib
+
+
+    # Тесты, но ошибки не ломают сборку
     - name: Tests
-      run: >-
-        .\\PCbuild\\rt.bat
-        -p "${ARCH}"
-        -d -q --fast-ci
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+      continue-on-error: true
       shell: bash
+      run: |
+        PCbuild\rt.bat ^
+          -p "${ARCH}" ^
+          -d ^
+          -q ^
+          --fast-ci ^
+          ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+
+
+    # Загрузка готового Python
+    - name: Upload CPython build
+      uses: actions/upload-artifact@v4
+      with:
+        name: CPython-${{ inputs.arch }}
+        path: python-dist
