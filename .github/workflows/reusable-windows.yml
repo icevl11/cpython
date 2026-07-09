@@ -17,8 +17,6 @@ on:
         required: false
         default: tail-call
         type: string
-        
-
 permissions:
   contents: read
 
