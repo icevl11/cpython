@@ -14,8 +14,10 @@ on:
         default: false
       interpreter:
         description: Which interpreter to build (switch-case or tail-call)
-        required: true
+        required: false
+        default: tail-call
         type: string
+        
 
 permissions:
   contents: read
