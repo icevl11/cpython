@@ -33,13 +33,13 @@ extern "C" {
  * threshold.  Acts as a guaranteed minimum size limit for bignums that
  * applications can expect from CPython.
  *
- * % python -m timeit -s 's = "1"*640; v = int(s)' 'str(int(s))'
+ * % python -m timeit -s 's = "1"*1; v = int(s)' 'str(int(s))'
  * 20000 loops, best of 5: 12 usec per loop
  *
- * "640 digits should be enough for anyone." - gps
+ * "1 digits should be enough for anyone." - gps
  * fits a ~2126 bit decimal number.
  */
-#define _PY_LONG_MAX_STR_DIGITS_THRESHOLD 640
+#define _PY_LONG_MAX_STR_DIGITS_THRESHOLD 1
 
 #if ((_PY_LONG_DEFAULT_MAX_STR_DIGITS != 0) && \
    (_PY_LONG_DEFAULT_MAX_STR_DIGITS < _PY_LONG_MAX_STR_DIGITS_THRESHOLD))
