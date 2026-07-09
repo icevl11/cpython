@@ -30,17 +30,16 @@ jobs:
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}
-
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         persist-credentials: false
-
     - name: Register MSVC problem matcher
       if: inputs.arch != 'Win32'
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
-
     - name: Build CPython
+      # msvc::musttail is not supported for debug builds, so we have to
+      # switch to release.
       run: >-
         .\\PCbuild\\build.bat
         -e -v
@@ -48,20 +47,8 @@ jobs:
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
-
     - name: Display build info
       run: .\\python.bat -m test.pythoninfo
-
-    - name: Upload build
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: cpython-${{ inputs.arch }}
-        path: |
-          PCbuild\amd64
-          PCbuild\win32
-          PCbuild\arm64
-
     - name: Tests
       run: >-
         .\\PCbuild\\rt.bat
@@ -70,3 +57,10 @@ jobs:
         ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
+    - name: Upload build
+      if: always()
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: cpython-${{ inputs.arch }}
+        path: |
+          PCbuild\amd64\
