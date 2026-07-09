@@ -22,70 +22,44 @@ jobs:
   build:
     name: Build CPython (${{ inputs.arch }})
     runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2022' }}
-
     timeout-minutes: 90
-
     env:
       ARCH: ${{ inputs.arch }}
 
     steps:
-
     - name: Checkout source
       uses: actions/checkout@v6
       with:
         persist-credentials: false
 
-
     - name: Build CPython
-      shell: bash
+      shell: cmd
       run: |
-        PCbuild\build.bat ^
-          -e ^
-          -d ^
-          -v ^
-          -p "${ARCH}" ^
-          ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        PCbuild\build.bat -e -d -v -p "%ARCH%" ${{ inputs.free-threading && '--disable-gil' || '' }}
 
-
-    # Создание полноценной установки Python
     - name: Install CPython layout
       shell: cmd
       run: |
         mkdir python-dist
-
-        PCbuild\amd64\python.exe -m sysconfig
-
+        REM Используем переменную %ARCH% для динамического пути
+        PCbuild\%ARCH%\python.exe -m sysconfig
         xcopy Lib python-dist\Lib /E /I /Y
-
-        xcopy PCbuild\amd64 python-dist /E /I /Y
-
+        xcopy PCbuild\%ARCH% python-dist /E /I /Y
         mkdir python-dist\Scripts
-
         echo Python build complete
 
-
-    # Проверка что Lib существует
     - name: Check files
       shell: cmd
       run: |
         dir python-dist
         dir python-dist\Lib
 
-
-    # Тесты, но ошибки не ломают сборку
     - name: Tests
       continue-on-error: true
-      shell: bash
+      shell: cmd
       run: |
-        PCbuild\rt.bat ^
-          -p "${ARCH}" ^
-          -d ^
-          -q ^
-          --fast-ci ^
-          ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        PCbuild\rt.bat -p "%ARCH%" -d -q --fast-ci ${{ inputs.free-threading && '--disable-gil' || '' }}
 
-
-    # Загрузка готового Python
     - name: Upload CPython build
       uses: actions/upload-artifact@v4
       with:
