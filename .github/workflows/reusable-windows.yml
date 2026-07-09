@@ -14,8 +14,8 @@ on:
         default: false
       interpreter:
         description: Which interpreter to build (switch-case or tail-call)
-        required: false
-        default: switch-case
+        required: true
+        default: tail-call
         type: string
 
 permissions:
@@ -50,6 +50,10 @@ jobs:
       shell: bash
     - name: Display build info
       run: .\\python.bat -m test.pythoninfo
+    - name: Build MSI
+      run: |
+        PCbuild\msi\build.bat
+      shell: cmd
     - name: Tests
       continue-on-error: true
       run: >-
@@ -59,3 +63,11 @@ jobs:
         ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
+
+    - name: Upload MSI
+      if: always()
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      with:
+        name: python-msi-${{ inputs.arch }}
+        path: PCbuild\msi\*.msi
+  
