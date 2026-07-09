@@ -15,7 +15,7 @@ on:
       interpreter:
         description: Which interpreter to build (switch-case or tail-call)
         required: false
-        default: tail-call
+        default: switch-case
         type: string
 permissions:
   contents: read
@@ -43,7 +43,7 @@ jobs:
       run: >-
         .\\PCbuild\\build.bat
         -e -v
-        ${{ inputs.interpreter == 'switch-case' && '-d' || '--tail-call-interp -c Release' }}
+        ${{ inputs.interpreter == 'switch-case' && '-c Release' || '--tail-call-interp -c Release' }}
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
@@ -59,7 +59,6 @@ jobs:
         .\\PCbuild\\rt.bat
         -p "${ARCH}"
         -q --fast-ci
-        ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
     - name: Upload MSI
