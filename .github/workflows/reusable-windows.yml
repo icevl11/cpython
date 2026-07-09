@@ -64,11 +64,9 @@ jobs:
         ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
-
     - name: Upload MSI
       if: always()
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
       with:
         name: python-msi-${{ inputs.arch }}
         path: PCbuild\msi\*.msi
-  
